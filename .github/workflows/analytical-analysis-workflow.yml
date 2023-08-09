@@ -4,5 +4,6 @@ jobs:
    exploratory-data:
      runs-on: Python-lastest
      steps:
-     - 
+     - runs: testing
+     
    
