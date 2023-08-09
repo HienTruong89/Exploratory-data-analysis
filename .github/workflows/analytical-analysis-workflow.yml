@@ -1,0 +1,8 @@
+name: analytical-analysis-workflow
+on: [push]
+jobs:
+   exploratory-data:
+     runs-on: Python-lastest
+     steps:
+     - 
+   
