@@ -91,15 +91,15 @@ data1x=np.array(data1)
 outliers_removed=np.where((data1['worst fractal dimension']> upper_wrd) | (data1['worst fractal dimension']<lower_wrd))
 data1_update1=np.delete(data1x,outliers_removed,axis=0)
 
-## multivariate analysis
+## dimensional reduction with PCA
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-X=np.array(data)
+X=np.array(data_update[:,0:12])
 X_pre=StandardScaler().fit_transform(X)
-class_target=np.array(target)
+class_target=data_update[:,-1]
 
 variances=[]
-for i in np.arange(1,20,1):
+for i in np.arange(1,10,1):
     pca=PCA(n_components=i)
     pca.fit(X_pre)
     variances.append(np.sum(pca.explained_variance_ratio_))
@@ -109,10 +109,9 @@ pca=PCA(n_components=5)
 scores=pca.fit_transform(X_pre)
 scores_plot=pd.DataFrame(scores,columns=['PC1','PC2','PC3','PC4','PC5'])
 scores_plot['target']=class_target
-sns.scatterplot(scores_plot,x='PC1',y='PC3',hue='target')
-
+sns.scatterplot(scores_plot,x='PC1',y='PC2',hue='target')
+# Plot 3D PCA score
 from mpl_toolkits.mplot3d import Axes3D
-
 fig=plt.figure(figsize=(10.5,7.5))
 ax=fig.add_subplot(111,projection='3d')
 classes=scores_plot['target'].unique()
@@ -128,21 +127,19 @@ ax.view_init(elev=5,azim=45) ## set the view angle with elevation and azimuth
 ax.zaxis.labelpad = 5
 plt.show()
 
-
-
+# plot PCA loadings 
 loadings=pca.components_.T
 loadings=pd.DataFrame(loadings,columns=['PC1','PC2','PC3','PC4','PC5'])
-loadings['feature']=data.columns
-ax=sns.scatterplot(loadings,x='PC1',y='PC5',hue='feature')
+loadings['feature']=data1.drop('target',axis=1).columns
+ax=sns.scatterplot(loadings,x='PC1',y='PC2',hue='feature')
 ax.legend(loc='best', bbox_to_anchor=(1.02, 1),ncols=1,fontsize=10)
 w=np.array(loadings['PC1'])
 ax.axhline(y=0,color='black',linestyle='--',linewidth=1.0)
 plt.show()
 
 ## Drop minor variables 
-data1=data.drop(['mean radius','worst radius','mean compactness','worst compactness',
-                 'mean concavity','worst concavity','mean concave points','worst concave points'],axis=1)
-X1=np.array(data1)
+data1_up=data1_update.drop(['mean texture','worst texture'],axis=1)
+X1=np.array(data1_up)
 X_pre1=StandardScaler().fit_transform(X1)
 
 variances1=[]
@@ -152,72 +149,24 @@ for i in np.arange(1,10,1):
     variances1.append(np.sum(pca.explained_variance_ratio_))
 plt.plot(variances1)
 
-pca=PCA(n_components=5)
+pca=PCA(n_components=4)
 scores=pca.fit_transform(X_pre1)
-scores_plot=pd.DataFrame(scores,columns=['PC1','PC2','PC3','PC4','PC5'])
+scores_plot=pd.DataFrame(scores,columns=['PC1','PC2','PC3','PC4'])
 scores_plot['target']=class_target
 sns.scatterplot(scores_plot,x='PC1',y='PC2',hue='target')
 
 loadings1=pca.components_.T
-loadings1=pd.DataFrame(loadings1,columns=['PC1','PC2','PC3','PC4','PC5'])
-loadings1['feature']=data1.columns
-ax=sns.scatterplot(loadings1,x='PC1',y='PC5',hue='feature')
+loadings1=pd.DataFrame(loadings1,columns=['PC1','PC2','PC3','PC4'])
+loadings1['feature']=data1_up.columns
+ax=sns.scatterplot(loadings1,x='PC1',y='PC2',hue='feature')
 ax.legend(loc='best', bbox_to_anchor=(1.02, 1),ncols=1,fontsize=10)
 ax.axhline(y=0,color='black',linestyle='--',linewidth=1.0)
 plt.show()
 
-## descriptive analysis and correlation
-from scipy.stats import f_oneway 
-from scipy.stats import pearsonr
-data1['target']=cancer['target']
-correlation=data1.corr()
 
-sns.heatmap(correlation,cmap="YlGnBu")
-
-data1['mean fractal dimension'].corr(data1['worst fractal dimension'])
-data1['mean fractal dimension'].cov(data1['worst fractal dimension'])
-
-## Inferential statictis 
-from scipy import stats ## call spicy.mean and other function directly 
-from statsmodels.stats.weightstats import DescrStatsW ## operate stats on the object
-
-Test=DescrStatsW(data1['mean fractal dimension'])
-Test.mean
-q3=Test.quantile(0.75) ## pandas object
-q1=Test.quantile(0.25)
-IQR=q3.loc[0.75]-q1.loc[0.25]
-
-## or 
-stats.iqr(data1['mean fractal dimension']) ## interpolation if data have lower,higher point
-stats.zscore(data1['mean fractal dimension']) ## calculate the propablity of each point around the mean =0, std=1
-## or numpy
-q1=np.percentile(data1['mean fractal dimension'], 25)
-q3=np.percentile(data1['mean fractal dimension'], 75)
-I=q3-q1
-
-# plot regression 
-sns.lmplot(da,x='worst fractal dimension',y='mean fractal dimension')
-
-#simple linear regression using scipy
-slope, intercept,r_value, _,_,=stats.linregress(da['worst fractal dimension'],da['mean fractal dimension'])
-
-print('R2', r_value**2)
-
-## plot fitted line for simple linear regression
-fig=plt.figure(figsize=(10,8))
-sns.scatterplot(da,x='worst fractal dimension',y='mean fractal dimension',s=100,label='Orginal')
-sns.lineplot(x=da['worst fractal dimension'],y=(slope*da['worst fractal dimension']+intercept),color='r',label='fitted line')
-## linear regression for multiple variables/predictor
-import statsmodels.api as sm
-X=da.drop(['target'],axis=1)
-y=da['target']
-
-reg_model=sm.OLS(y,X).fit()
-reg_model.params
-reg_model.summary()
-
+### Inferential statictis 
+## Hypothesis with ANOVA & linear model fitting
 # Test one-way anova
-
 group1=np.array(data1['mean texture'])
 group2=np.array(data1['worst texture'])
 f_oneway(group1,group2)
@@ -232,22 +181,98 @@ for i in data1.columns.unique():
 for i in range(len(groups)-1):
     anova=f_oneway(groups[i].values,groups[i+1].values)
     anov.append(anova)
-## pearsonr
+# pearsonr
 r2=[]
 for j in range(len(groups)-1):
     pr2=pearsonr(groups[j].values.reshape(-1),groups[j+1].values.reshape(-1))
     r2.append(pr2)
-### Chi-square statistics 
-## Mutual information
+    
+# Mutual information compared to class_target
 from sklearn.feature_selection import mutual_info_classif
-
-Sel=pd.DataFrame(mutual_info_classif(data1, target))
-Sel['feature']=list(data1.columns)
-
-### Chi-square test
+Sel=pd.DataFrame(mutual_info_classif(data1_up, class_target))
+Sel['feature']=list(data1_up.columns)
+print('Mutual information:',Sel)
+### Chi-square test to compare observed results and with expected results
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import chi2
 
-df_new=SelectKBest(chi2,k=6).fit_transform(data1, target)
+df_new=SelectKBest(chi2,k=4).fit_transform(data1_up, class_target)
 
- 
+from scipy import stats  
+from statsmodels.stats.weightstats import DescrStatsW ## operate stats on the object
+
+Test=DescrStatsW(data1['mean fractal dimension'])
+Test.mean
+q3=Test.quantile(0.75) ## pandas object
+q1=Test.quantile(0.25)
+IQR=q3.loc[0.75]-q1.loc[0.25]
+
+# or 
+stats.iqr(data1['mean fractal dimension']) ## interpolation if data have lower,higher point
+stats.zscore(data1['mean fractal dimension']) ## calculate the propablity of each point around the mean =0, std=1
+## or numpy
+q1=np.percentile(data1['mean fractal dimension'], 25)
+q3=np.percentile(data1['mean fractal dimension'], 75)
+I=q3-q1
+
+## Fit linear regression plot with seaborn
+sns.lmplot(da,x='worst fractal dimension',y='mean fractal dimension')
+#call linear regression using scipy
+slope, intercept,r_value, _,_,=stats.linregress(da['worst fractal dimension'],da['mean fractal dimension'])
+print('R2', r_value**2)
+
+
+## Mutivariate linear regression for with  OLS 
+import statsmodels.api as sm
+X=da.drop(['target'],axis=1)
+y=da['target']
+
+reg_model=sm.OLS(y,X).fit()
+reg_model.params
+reg_model.summary()
+
+
+## Multivariate classification
+from sklearn.model_selection import train_test_split
+X=data1_up
+y=class_target
+x_train,x_test,y_train,y_test=train_test_split(X,y,test_size=0.2)
+
+## Logistic regression classifier (for classification not regression)
+from sklearn.linear_model import LogisticRegression
+log=LogisticRegression(solver='liblinear').fit(x_train,y_train) 
+
+y_pred=log.predict(x_test)
+# Calculate accuracy on the test set
+from sklearn.metrics import accuracy_score,f1_score,precision_score,recall_score,confusion_matrix
+overall_accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {overall_accuracy:.2f}")
+
+class_accuracy=[]
+F1=[]
+Recall=[]
+Precision=[]
+for i in np.unique(y_test):
+    label=np.where(y_test == i)
+    class_acc=accuracy_score(y_test[label],y_pred[label])
+    class_accuracy.append(class_acc)
+    fscore=f1_score(y_test[label],y_pred[label],average='micro')
+    F1.append(fscore)
+    re=recall_score(y_test[label],y_pred[label],average='micro')
+    Recall.append(re)
+    pre=precision_score(y_test[label],y_pred[label],average='micro')
+    Precision.append(pre)
+
+
+conf_matrix = confusion_matrix(y_test, y_pred)
+print("Confusion Matrix:\n", conf_matrix)
+
+labels=['Magilant','Benign']
+Results=pd.DataFrame({'Class accuracy':[class_accuracy],'F1':[F1],'Precision':[Precision],'Recall':[Recall]}).transpose()
+Results['labels']=labels
+print(Results)
+
+
+
+
+
