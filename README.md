@@ -3,12 +3,12 @@
 - Python codes are developed to analyze the data features and then plot the results using matplotlib and seaborn packages.
 - The findings were observed in a separate PowerPoint file.
 
-# Case study 's topic 
+# Case study 's topics 
 Overall, Python codes were written to 
    - Find the correlation betwwen variables
    - Dectect of outliers 
    - Drop unnecessary variables
    - Develop classification models to predict certain circumtances.
 1. Breast cancer: To predict "Maglinent" vs " Benign" with Logistic Regression and Linear Support Vector Machine
-2. Forest Fire: 
+2. Forest Fire: To evaluate factors causing forest fire
    
