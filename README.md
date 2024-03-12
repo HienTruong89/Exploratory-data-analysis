@@ -4,11 +4,11 @@
 - The findings were observed in a separate PowerPoint file.
 
 # Case study 's topics 
+1. Breast cancer: To predict "Maglinent" vs " Benign" with Logistic Regression and Linear Support Vector Machine
+2. Forest Fire: To evaluate factors causing forest fire
+   
 Overall, Python codes were written to 
    - Find the correlation betwwen variables
    - Dectect of outliers 
    - Drop unnecessary variables
    - Develop classification models to predict certain circumtances.
-1. Breast cancer: To predict "Maglinent" vs " Benign" with Logistic Regression and Linear Support Vector Machine
-2. Forest Fire: To evaluate factors causing forest fire
-   
